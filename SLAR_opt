@@ -1,0 +1,58 @@
+#! /usr/bin/ruby
+# 
+$: << "./"
+require 'reflectance'
+
+class Func
+  def initialize(n_low)
+    @hash = Hash.new
+    @hash[:print?] = false
+    @hash[:num] = 20
+
+    @xyz = XYZ.new
+    @d65_ref = @xyz.get_black_emitter(6500)
+    @d65_xy = XYZ.xy(@d65_ref)
+    @n_low = n_low
+  end
+
+  def layers(param)
+    Layers.new(
+                 [
+                  Layer.new(Index.new(1.0),0), 
+                  Layer.new(Index.new(@n_low), param[0]), 
+                  Layer.new(Index.new(1.5), 0)
+                  ])    
+  end
+
+  def calc(param)
+    p = Param.new
+    p.angle = 0
+    p.wl = 550
+    layers = self.layers(param)
+    ref_xyz = RefUtil.ref_xyz(layers,p, @hash)
+    ref_xy = XYZ.xy(ref_xyz)
+#    color_dif = (ref_xy[0]-@d65_xy[0])**2+(ref_xy[1]-@d65_xy[1])**2
+    ref_xyz[1]/@d65_ref[1]# + color_dif*0.1
+#    RefUtil.avg_ref(layers, p, @hash)[0]
+  end
+end
+
+(1..50).map{|i| 1.0+i*0.01}.each do |n_low|
+#[1.2].each do |n_low|
+puts "n_low\t" + n_low.to_s
+opt = Mesh_Optimizer.new
+#opt.verbose=true
+opt.fix=false
+f = Func.new(n_low)
+(param, val) = opt.optimize([100], [0], [500], [5]){|param| f.calc(param)}
+puts ["opt_result", n_low,param].flatten.join("\t")
+
+p = Param.new
+p.angle = 0
+p.wl = 550
+layers = Func.new(n_low).layers(param)
+RefUtil.wavelength_scan(layers,p)
+ref_xyz = RefUtil.ref_xyz(layers,p)
+puts [ref_xyz[1]/XYZ.new.get_black_emitter(6500)[1],XYZ.xy(ref_xyz)].flatten.join("\t")
+RefUtil.avg_ref(layers,p)
+end
