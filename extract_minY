@@ -1,0 +1,20 @@
+#! /usr/bin/ruby
+
+data = Hash.new
+n_low = -1
+start_ln = -1
+ARGF.each do |line|
+  if (line =~ /n_low\t(.+)$/)
+    n_low = $1.to_f 
+    data[n_low] = Hash.new if (data[n_low] == nil)
+    start_ln = ARGF.lineno
+  end
+  a = line.chomp.split(/\t/)
+#  data[n_low][:layers] = a.map{|x| x.to_f} if (ARGF.lineno == start_ln+101)
+  data[n_low][:layers] = a.map{|x| x.to_f}[1,a.size-1] if (a[0]=~/opt_result/)
+  data[n_low][:Lxy] = a if (a.size == 3)
+end
+
+data.keys.sort.each do |key|
+  puts [key, data[key][:layers], data[key][:Lxy]].flatten.join("\t")
+end
