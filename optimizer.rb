@@ -545,3 +545,4 @@ class Mesh_Optimizer
 end
 
 #puts [Mesh_Optimizer.new.optimize([0,0],[0,0],[10,10],[10,0]){|x| x[0]**2+x[1]**2+10*Math.cos(x[0]*2)*Math.cos(x[1]*2) }].join("\t")
+
